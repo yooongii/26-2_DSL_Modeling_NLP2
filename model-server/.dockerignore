@@ -1,0 +1,26 @@
+# 빌드할 때 Cloud Run 으로 올려보내는 파일을 줄인다.
+#
+# ⚠️ ckpt/ 는 여기 **넣지 않는다.** 모델을 이미지에 구워야 콜드스타트가 짧아지므로
+#    빌드에 반드시 포함돼야 한다(Dockerfile 주석 참고). 실수로 추가하지 말 것.
+
+.venv/
+__pycache__/
+*.pyc
+
+# 학습 산출물·원본 데이터. 서빙에 필요 없고 리뷰 원문이 들어 있을 수 있다.
+runs/
+data/
+*.log
+*.csv
+
+# 학습·튜닝 스크립트. 서버는 serve.py 만 쓴다.
+01_prep.py
+02_train.py
+05_train_multi.py
+06_tune_thresholds.py
+
+# 문서
+*.md
+
+# 교체된 이전 한국어 모델. 서버는 roberta-small 을 올리므로 이미지에 넣지 않는다(442MB 절약).
+ckpt/klue_roberta-base/

@@ -1,0 +1,16 @@
+# 서빙에 필요한 것만. 학습 의존성(datasets, accelerate, scikit-learn)은 넣지 않는다 —
+# 이미지가 커지면 배포가 느려지고 콜드스타트도 길어진다.
+#
+# torch 는 Dockerfile 에서 CPU 전용 인덱스로 따로 깐다.
+# 여기에 그냥 torch 를 적으면 CUDA 빌드(2.5GB+)가 받아져서 이미지가 터진다.
+
+# transformers 는 Hugging Face 가 만든 오픈소스 라이브러리다. 우리 모델(RoBERTa·DistilBERT)의
+# 구조를 코드로 갖고 있고 ckpt/ 의 가중치 파일을 읽는다. 로컬 경로를 주면 인터넷에 접속하지
+# 않는다 — HF 계정·토큰과는 무관하다.
+transformers>=4.40
+
+# 우리가 직접 부르지는 않지만 transformers 가 내부적으로 요구한다. 빼면 import 가 깨진다.
+huggingface_hub>=0.34
+
+# 팀 규칙: numpy 는 2 미만 (CLAUDE.md)
+numpy<2

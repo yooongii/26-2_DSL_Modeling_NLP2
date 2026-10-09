@@ -1,0 +1,43 @@
+# 공통
+__pycache__/
+*.pyc
+
+# archive/약관 — ClearClause 시절 RAG+NLI 실험. 지금은 아무도 import 하지 않는다.
+archive/약관/.cache/
+archive/약관/nli_verifier.zip
+# GitHub는 100MB 넘는 파일을 일반 push로 거부함 (이 파일은 260MB).
+# 팀원 공유는 별도 경로(구글드라이브 등)로 하고, 받은 뒤 이 경로에 그대로 넣으면 됨.
+archive/약관/nli_verifier/model.safetensors
+
+# labeling/ — 수집한 리뷰 원문은 커밋하지 않는다. 로컬 분석 전용이고 재배포 대상이 아니다.
+# 집계 결과(실측-로그.md)와 코드만 공유한다.
+labeling/md/
+labeling/data/
+labeling/out/
+# 라벨링 CSV에는 sentence 칸에 리뷰 원문이 들어간다. 채점 결과(채점.md)는 숫자뿐이라 예외.
+labeling/labels/*
+!labeling/labels/채점.md
+# 팀 제출용 원고 — 리뷰 원문이 들어간다
+labeling/제출-원고.txt
+
+# review-engine/ — 빌드 산출물은 제외하되, 콘솔 번들은 커밋한다.
+# (Node 없는 팀원도 이 파일만 있으면 쓸 수 있다. 확장용 reviewtab.js 는 extension/ 에 커밋됨)
+review-engine/out/*
+!review-engine/out/review-panel.console.js
+
+# 라벨링 CSV — sentence/review_text 칸에 리뷰 원문이 들어간다. 어느 폴더에 있든 제외.
+# (_추가비용전용 처럼 접미사가 붙어도 잡히도록 넓게 씀)
+축*.csv
+
+# model-server/ — 학습 환경·산출물. 재생성 가능하거나 리뷰 원문·대용량 가중치를 포함한다.
+# ckpt/ 는 GitHub 100MB 상한을 넘는다 → 구글 드라이브(ckpt_v3) 로 공유.
+model-server/.venv/
+model-server/data/
+model-server/ckpt/
+model-server/runs/
+model-server/*.log
+
+# API 키 등 로컬 비밀값 — 절대 커밋하지 않는다
+.env
+**/.env
+*.env

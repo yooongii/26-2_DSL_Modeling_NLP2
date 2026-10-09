@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>저장한 숙소</title>
+  <style>
+    /* 브리핑 카드(briefing.js)와 같은 디자인 토큰.
+       카드가 금융앱형으로 바뀌면서 여기도 같이 맞춘다 — 같은 확장의 두 화면이
+       서로 다른 색·서체로 보이면 안 된다. 토큰 이름과 값은 briefing.js 쪽과 1:1이다.
+
+       폰트 스택 순서가 중요하다 — Segoe UI 를 한글 폰트보다 **앞**에 둔다.
+       숫자는 영문 글립이라 Windows 에서 Segoe UI(Black 까지 있음)를 타고,
+       한글만 맑은 고딕(Bold 까지)으로 떨어진다. 둘을 바꾸면 숫자까지 Bold 에서 막힌다. */
+    :root {
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI",
+              "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
+      --ink: #14171c; --muted: #6b7381; --faint: #98a0ac;
+      --line: #eceef1; --edge: #dfe2e7; --paper: #ffffff;
+      --head: #17243c; --head-sub: #9fb0c6; --navy: #1d4ed8;
+      /* 초록·빨강은 두 단계 — 진한 채움은 점·칩에만, 글자는 읽히는 선까지만 */
+      --safe: #1b7a52; --safe-bg: #f2faf6; --safe-chip: #dcf0e5;
+      --warn: #8a5417; --warn-bg: #fdf7ef; --warn-chip: #f7e6ce;
+      --risk: #c24a3a; --risk-bg: #fdf5f3; --risk-chip: #fbe7e2;
+      --gray: #6b7381; --gray-bg: #f2f4f7;
+    }
+    * { box-sizing: border-box; }
+    html { overflow: hidden; }
+    body {
+      margin: 0; width: 360px; max-height: 560px; background: var(--paper); color: var(--ink);
+      font-family: var(--font); font-size: 13px;
+      font-variant-numeric: normal; -webkit-font-smoothing: antialiased;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+
+    /* 헤더 — 카드와 같은 짙은 남색 블록 */
+    header {
+      flex: none; padding: 14px 16px 14px;
+      background: var(--head); border-bottom: 0;
+    }
+    .title { display: flex; align-items: center; gap: 9px; }
+    .title img { width: 19px; height: 19px; border-radius: 6px; }
+    .title h1 { margin: 0; font-size: 13.5px; font-weight: 700; color: #fff; letter-spacing: -.02em; }
+    .count {
+      margin-left: auto; font-size: 11px; color: #fff; background: rgba(255,255,255,.16);
+      padding: 3px 9px; border-radius: 999px; font-weight: 700;
+    }
+    /* 카드 옆 iframe(?embed=1)으로 뜰 때만 쓰는 닫기 버튼 — 짙은 헤더 위라 밝은 글자 */
+    html:has(body.embed), body.embed { height: 100%; }
+    body.embed { width: auto; max-height: none; }
+    .close {
+      all: unset; width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center;
+      margin-left: 4px; font-size: 17px; color: var(--head-sub); cursor: pointer;
+    }
+    .count[hidden] + .close { margin-left: auto; }
+    .close:hover { background: rgba(255,255,255,.16); color: #fff; }
+    .sort { display: flex; gap: 3px; margin-top: 12px; padding: 3px; background: rgba(255,255,255,.1); border-radius: 10px; }
+    .sort button {
+      all: unset; flex: 1; text-align: center; padding: 6px 0; border-radius: 8px; cursor: pointer;
+      font-family: var(--font); font-size: 12px; color: var(--head-sub); font-weight: 600;
+    }
+    .sort button.on { background: #fff; color: var(--head); font-weight: 700; }
+
+    /* 목록 — 테두리 대신 여백과 연한 구분선으로 나눈다 */
+    #list {
+      list-style: none; margin: 0; padding: 6px 12px 14px; flex: 1 1 auto; min-height: 0;
+      overflow-y: auto; overscroll-behavior: contain;
+      scrollbar-width: thin; scrollbar-color: #d3d8e0 transparent;
+    }
+    #list::-webkit-scrollbar { width: 8px; }
+    #list::-webkit-scrollbar-track { background: transparent; }
+    #list::-webkit-scrollbar-thumb { background: #d3d8e0; border-radius: 999px; border: 2px solid var(--paper); }
+    #list::-webkit-scrollbar-thumb:hover { background: #b9c0cc; }
+    .item {
+      position: relative; padding: 14px 15px 13px; margin-top: 8px;
+      border: 0; border-radius: 14px; background: #fff;
+      box-shadow: 0 1px 3px rgba(20,24,30,.06), 0 0 0 1px var(--line);
+      transition: box-shadow .15s ease;
+    }
+    .item:hover { box-shadow: 0 4px 14px rgba(20,24,30,.09), 0 0 0 1px var(--edge); }
+    /* 최저가 — 테두리를 굵게 하는 대신 연한 남색 바탕으로 눌러 표시한다 */
+    .item.best {
+      background: #f5f8fe; box-shadow: 0 2px 10px rgba(29,78,216,.10), 0 0 0 1.5px #c7d9f7;
+    }
+    .item.best:hover { box-shadow: 0 4px 16px rgba(29,78,216,.16), 0 0 0 1.5px #b4cbf3; }
+
+    .name, .en { overflow: hidden; padding-right: 24px; }
+    .name {
+      font-weight: 800; font-size: 14.5px; line-height: 1.35; letter-spacing: -.02em;
+      display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; word-break: keep-all;
+    }
+    .en { margin-top: 2px; font-size: 11px; color: var(--faint); white-space: nowrap; text-overflow: ellipsis; }
+    .meta { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 11.5px; color: var(--muted); }
+    /* 사이트 표시 — 작은 색 점 + 이름. 세 사이트를 한눈에 구분한다 */
+    .site { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; color: var(--ink); }
+    .site::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--dot, var(--gray)); }
+    .site.agoda { --dot: #7b3fa0; }
+    .site.tripcom { --dot: #2f6bff; }
+    .site.booking { --dot: #003b95; }
+    .meta .sep { color: var(--faint); }
+
+    .price-row { display: flex; align-items: center; gap: 8px; margin-top: 11px; }
+    .price { font-size: 20px; font-weight: 800; letter-spacing: -.035em; line-height: 1.1; }
+    .price-note { margin-top: 3px; font-size: 10.5px; color: var(--faint); }
+    .badge {
+      margin-left: auto; font-size: 10.5px; font-weight: 700; padding: 3px 9px;
+      border-radius: 999px; color: var(--navy); background: #e2ebfc;
+    }
+    /* 최저가와의 차액 — 경고가 아니라 비교 정보라 진한 빨강 대신 차분한 톤 + 라벨 */
+    .diff { margin-left: auto; text-align: right; line-height: 1.25; font-size: 12px; font-weight: 700; color: var(--risk); }
+    .diff small { display: block; font-size: 10px; font-weight: 500; color: var(--faint); }
+
+    .cancel { display: flex; align-items: center; gap: 7px; margin-top: 9px; font-size: 11.5px; color: var(--muted); }
+    .chip { font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 999px; }
+    .chip.safe { color: var(--safe); background: var(--safe-chip); }
+    .chip.warn { color: var(--warn); background: var(--warn-chip); }
+    .chip.risk { color: var(--risk); background: var(--risk-chip); }
+    .chip.gray { color: var(--gray); background: var(--gray-bg); }
+
+    /* 리뷰 기반 추가비용 — 확정이 아니라 추정이라 황토색으로 구분한다(카드 리뷰 탭과 같은 톤).
+       절대 원칙: 이 금액은 위 가격에 합산하지 않는다. */
+    .reviews {
+      margin-top: 9px; padding: 9px 11px; border-radius: 10px;
+      background: var(--warn-bg); color: #7a6a55; font-size: 11px; line-height: 1.6;
+    }
+    .reviews b { color: var(--warn); font-weight: 700; }
+
+    .go {
+      all: unset; display: block; box-sizing: border-box; width: 100%; margin-top: 12px; padding: 10px 0;
+      text-align: center; cursor: pointer; border-radius: 10px; background: var(--gray-bg); color: var(--head);
+      font-family: var(--font); font-size: 12.5px; font-weight: 700; letter-spacing: -.02em;
+      transition: background .12s, color .12s;
+    }
+    .go:hover { background: var(--head); color: #fff; }
+    .item.best .go { background: var(--navy); color: #fff; }
+    .item.best .go:hover { background: #1740b0; }
+    .go:focus-visible, .del:focus-visible, .sort button:focus-visible, .close:focus-visible {
+      outline: 2px solid var(--navy); outline-offset: 2px;
+    }
+
+    .del {
+      all: unset; position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; border-radius: 8px;
+      display: grid; place-items: center; color: #b8bec7; font-size: 15px; cursor: pointer;
+    }
+    .del:hover { background: var(--risk-chip); color: var(--risk); }
+
+    .empty { padding: 40px 26px 44px; text-align: center; color: var(--muted); line-height: 1.75; font-size: 12.5px; }
+    .empty .star { font-size: 30px; color: #f0b400; margin-bottom: 6px; }
+    .empty b { color: var(--ink); font-weight: 700; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="title">
+      <img src="icon48.png" alt="">
+      <h1>저장한 숙소</h1>
+      <span class="count" id="count" hidden></span>
+    </div>
+    <div class="sort" id="sort" hidden>
+      <button data-sort="price">가격순</button>
+      <button data-sort="recent">최근 저장순</button>
+    </div>
+  </header>
+  <ul id="list"></ul>
+  <script src="popup.js"></script>
+</body>
+</html>

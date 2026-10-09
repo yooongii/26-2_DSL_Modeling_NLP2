@@ -1,0 +1,69 @@
+{
+  "manifest_version": 3,
+  "name": "ClearBooking : 호텔 실결제액·취소 위약금",
+  "version": "1.1.0",
+  "minimum_chrome_version": "114",
+  "description": "아고다·트립닷컴·부킹닷컴 예약 직전, 실제 결제액과 취소 시 예상 손실액을 한 장의 브리핑 카드로 보여줍니다. 세금·수수료를 포함한 진짜 총액과 취소 조건을 헤매지 않고 바로 확인하세요.",
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://*.agoda.com/*",
+    "https://*.trip.com/*",
+    "https://*.booking.com/*"
+  ],
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "action": {
+    "default_title": "저장한 숙소 보기",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "popup-opener.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.agoda.com/*",
+        "https://*.trip.com/*",
+        "https://*.booking.com/*"
+      ],
+      "js": [
+        "sites.js",
+        "sites/tripcom.js",
+        "sites/bookingcom.js",
+        "pricing.js",
+        "cancellation.js",
+        "pageClaims.js",
+        "badges.js",
+        "reviewtab.js",
+        "briefing.js",
+        "content.js",
+        "paymentCurrency.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "icon48.png",
+        "popup.html"
+      ],
+      "matches": [
+        "https://*.agoda.com/*",
+        "https://*.trip.com/*",
+        "https://*.booking.com/*"
+      ]
+    }
+  ]
+}
